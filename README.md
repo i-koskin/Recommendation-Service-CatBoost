@@ -8,6 +8,7 @@
 
 
 Стек:
+
 • CatBoost
 • Python (Pandas, Numpy, Scikit-learn, Seaborn, Scipy)
 • FastAPI
