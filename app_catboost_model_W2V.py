@@ -87,36 +87,50 @@ df_post = load_posts_features()
 post_table = load_post_text()
 liked_posts = load_liked_posts()
 
-def get_recommended_feed(id: int, time: datetime, limit: int):
-    # Функция для получения списка рекомендаций для пользователя по его ID
-    # Получение фич пользователя по его ID
-    user_features = df_user.loc[df_user['user_id'] == id]
-    user_features = user_features.drop(['user_id'], axis=1)
+def extract_user_features(user_id: int) -> pd.Series:
+    # Функция для получения характеристик пользователя
+    logger.info(f'Извлечение характеристик для user_id: {user_id}')
+    user_features = df_user.loc[df_user['user_id'] == user_id]
+    if user_features.empty:
+        raise ValueError(f'Пользователь с ID {user_id} не найден.')
+    return user_features.drop(['user_id'], axis=1).iloc[0]
 
-    # Загрузка фич по постам
-    posts_features = df_post.copy()
+def add_time_features(df: pd.DataFrame, current_time: datetime) -> pd.DataFrame:
+    # Функция для добавления временных характеристик
+    logger.info('Добавление временных характеристик')
     
-    # Объединение фич
-    add_user_features = dict(zip(user_features.columns, user_features.values[0]))
-    user_posts_features = posts_features.assign(**add_user_features)
-    user_posts_features = user_posts_features.reset_index(drop=True)
+    # Преобразуем текущее время в datetime
+    current_time = pd.to_datetime(current_time)
     
-    # Добавление фич о текущей дате рекомендаций
-    user_posts_features['hour'] = pd.to_datetime(time).hour
-    user_posts_features['weekday'] = pd.to_datetime(time).day_of_week
-    user_posts_features['time_of_day'] = pd.cut(
-        user_posts_features['hour'],
-        bins=[0, 6, 12, 18, 24],
-        labels=['night', 'morning', 'afternoon', 'evening'],
-        right=False
-        )
-    user_posts_features['day_of_week'] = pd.cut(
-        user_posts_features['weekday'],
-        bins=[-1, 4, 6],
-        labels=['weekday', 'weekend']
-        )
+    # Добавляем временные характеристики
+    df['hour'] = pd.to_datetime(current_time).hour
+    df['weekday'] = pd.to_datetime(current_time).day_of_week # 0 - понедельник, 6 - воскресенье
+    
+    # Определяем время суток
+    df['time_of_day'] = pd.cut(df['hour'],
+                               bins=[0, 6, 12, 18, 24],
+                               labels=['ночь', 'утро', 'день', 'вечер'],
+                               right=False)
+    
+    # Определяем тип дня
+    df['day_of_week'] = pd.cut(df['weekday'],
+                               bins=[-1, 4, 6],
+                               labels=['будний', 'выходной'])
+    return df.drop(['hour', 'weekday'], axis=1)
 
-    user_posts_features = user_posts_features.drop(['hour', 'weekday'], axis=1)
+def get_recommended_feed(user_id: int, current_time: datetime, limit: int):
+    # Функция для получения списка рекоммендованных постов
+    # Получаем характеристики пользователя
+    user_features = extract_user_features(user_id)
+    
+    # Получаем DataFrame с постами
+    posts = df_post.copy()
+    
+    # Добавляем временные характеристики к DataFrame постов
+    posts_with_time_features = add_time_features(posts, current_time)
+    
+    # Объединяем характеристики пользователя с постами
+    user_posts_features = user_features.append(posts_with_time_features, ignore_index=True)
 
     # Закрепление порядка колонок
     user_posts_features = user_posts_features[['post_id', 'time_of_day', 'day_of_week', 'topic', 'vector_0', 'vector_1', 'vector_2', 'vector_3', 'vector_4', 'vector_5', 'vector_6', 'vector_7', 'vector_8', 'vector_9', 'vector_10', 'vector_11', 'vector_12', 'vector_13', 'vector_14', 'vector_15', 'vector_16', 'vector_17', 'vector_18', 'vector_19', 'vector_20', 'vector_21', 'vector_22', 'vector_23', 'vector_24', 'vector_25', 'vector_26', 'vector_27', 'vector_28', 'vector_29', 'vector_30', 'vector_31', 'vector_32', 'vector_33', 'vector_34', 'vector_35', 'vector_36', 'vector_37', 'vector_38', 'vector_39', 'vector_40', 'vector_41', 'vector_42', 'vector_43', 'vector_44', 'vector_45', 'vector_46', 'vector_47', 'vector_48', 'vector_49', 'vector_50', 'vector_51', 'vector_52', 'vector_53', 'vector_54', 'vector_55', 'vector_56', 'vector_57', 'vector_58', 'vector_59', 'vector_60', 'vector_61', 'vector_62', 'vector_63', 'vector_64', 'vector_65', 'vector_66', 'vector_67', 'vector_68', 'vector_69', 'vector_70', 'vector_71', 'vector_72', 'vector_73', 'vector_74', 'vector_75', 'vector_76', 'vector_77', 'vector_78', 'vector_79', 'vector_80', 'vector_81', 'vector_82', 'vector_83', 'vector_84', 'vector_85', 'vector_86', 'vector_87', 'vector_88', 'vector_89', 'vector_90', 'vector_91', 'vector_92', 'vector_93', 'vector_94', 'vector_95', 'vector_96', 'vector_97', 'vector_98', 'vector_99', 'gender', 'city', 'exp_group', 'os', 'source', 'age_group']]
