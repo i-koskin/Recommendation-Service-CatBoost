@@ -121,7 +121,7 @@ def get_recommended_feed(user_id: int, current_time: datetime, limit: int):
     user_features = extract_user_features(user_id)
     
     # Получаем DataFrame с постами
-    posts = df_post
+    posts = df_post.copy()
     
     # Добавляем временные характеристики к DataFrame постов
     posts_with_time_features = add_time_features(posts, current_time)
