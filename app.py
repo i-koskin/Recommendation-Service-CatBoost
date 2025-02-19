@@ -230,7 +230,7 @@ def get_recommended_feed(model, user_id: int, current_time: datetime, limit: int
         }) for i in recommended_posts
     ]
 
-
+# Эндпоинт для получения списка рекомендованных постов
 @app.get('/post/recommendations/', response_model=Response)
 def recommended_posts(id: int, time: datetime, limit: int=10) -> Response:
     exp_group = get_exp_group(id)  # Определяем группу пользователя
