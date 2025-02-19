@@ -88,7 +88,7 @@ post_table = load_post_text()
 liked_posts = load_liked_posts()
 
 def get_recommended_feed(id: int, time: datetime, limit: int):
-    # Функция для получения рекомендованного фида для пользователя по его ID
+    # Функция для получения списка рекомендаций для пользователя по его ID
     # Получение фич пользователя по его ID
     user_features = df_user.loc[df_user['user_id'] == id]
     user_features = user_features.drop(['user_id'], axis=1)
@@ -121,16 +121,16 @@ def get_recommended_feed(id: int, time: datetime, limit: int):
     # Закрепление порядка колонок
     user_posts_features = user_posts_features[['post_id', 'time_of_day', 'day_of_week', 'topic', 'vector_0', 'vector_1', 'vector_2', 'vector_3', 'vector_4', 'vector_5', 'vector_6', 'vector_7', 'vector_8', 'vector_9', 'vector_10', 'vector_11', 'vector_12', 'vector_13', 'vector_14', 'vector_15', 'vector_16', 'vector_17', 'vector_18', 'vector_19', 'vector_20', 'vector_21', 'vector_22', 'vector_23', 'vector_24', 'vector_25', 'vector_26', 'vector_27', 'vector_28', 'vector_29', 'vector_30', 'vector_31', 'vector_32', 'vector_33', 'vector_34', 'vector_35', 'vector_36', 'vector_37', 'vector_38', 'vector_39', 'vector_40', 'vector_41', 'vector_42', 'vector_43', 'vector_44', 'vector_45', 'vector_46', 'vector_47', 'vector_48', 'vector_49', 'vector_50', 'vector_51', 'vector_52', 'vector_53', 'vector_54', 'vector_55', 'vector_56', 'vector_57', 'vector_58', 'vector_59', 'vector_60', 'vector_61', 'vector_62', 'vector_63', 'vector_64', 'vector_65', 'vector_66', 'vector_67', 'vector_68', 'vector_69', 'vector_70', 'vector_71', 'vector_72', 'vector_73', 'vector_74', 'vector_75', 'vector_76', 'vector_77', 'vector_78', 'vector_79', 'vector_80', 'vector_81', 'vector_82', 'vector_83', 'vector_84', 'vector_85', 'vector_86', 'vector_87', 'vector_88', 'vector_89', 'vector_90', 'vector_91', 'vector_92', 'vector_93', 'vector_94', 'vector_95', 'vector_96', 'vector_97', 'vector_98', 'vector_99', 'gender', 'city', 'exp_group', 'os', 'source', 'age_group']]
 
-    # Формировка вероятности лайкнуть пост для всех постов
+    # Формируем вероятности лайкнуть пост для всех постов
     predicts = model.predict_proba(user_posts_features)[:, 1]
     user_posts_features['predicts'] = predicts
 
-    # Удаление постов, лайкнутых пользователем
+    # Удаляем посты, лайкнутых пользователем
     like_posts = liked_posts
     like_posts = list(like_posts[like_posts['user_id'] == id])
     filtered_ = user_posts_features[~user_posts_features.post_id.isin(like_posts)]
 
-    # Формирование списка постов для рекомендий
+    # Формирование списка рекоммендованных постов
     recommended_posts = filtered_.sort_values('predicts')[-limit:].post_id
 
     return [
