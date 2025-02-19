@@ -84,36 +84,50 @@ df_post = load_posts_features()
 post_table = load_post_text()
 liked_posts = load_liked_posts()
 
-def get_recommended_feed(id: int, time: datetime, limit: int):
-    # Функция для получения списка рекомендованных постов для пользователя по его ID
-    # Получение фич пользователя по его ID
-    user_features = df_user.loc[df_user['user_id'] == id]
-    user_features = user_features.drop(['user_id'], axis=1)
-    
-    # Загрузка фич по постам
-    posts_features = df_post.copy()
-    
-    # Объединение фич
-    add_user_features = dict(zip(user_features.columns, user_features.values[0]))
-    user_posts_features = posts_features.assign(**add_user_features)
-    user_posts_features = user_posts_features.reset_index(drop=True)
-    
-    # Добавление фич о текущей дате рекомендаций
-    user_posts_features['hour'] = pd.to_datetime(time).hour
-    user_posts_features['weekday'] = pd.to_datetime(time).day_of_week
-    user_posts_features['time_of_day'] = pd.cut(
-        user_posts_features['hour'],
-        bins=[0, 6, 12, 18, 24],
-        labels=['night', 'morning', 'afternoon', 'evening'],
-        right=False
-    )
-    user_posts_features['day_of_week'] = pd.cut(
-        user_posts_features['weekday'],
-        bins=[-1, 4, 6],
-        labels=['weekday', 'weekend']
-    )
+def extract_user_features(user_id: int) -> pd.Series:
+    # Функция для получения характеристик пользователя
+    logger.info(f'Извлечение характеристик для user_id: {user_id}')
+    user_features = df_user.loc[df_user['user_id'] == user_id]
+    if user_features.empty:
+        raise ValueError(f'Пользователь с ID {user_id} не найден.')
+    return user_features.drop(['user_id'], axis=1).iloc[0]
 
-    user_posts_features = user_posts_features.drop(['hour', 'weekday'], axis=1)
+def add_time_features(df: pd.DataFrame, current_time: datetime) -> pd.DataFrame:
+    # Функция для добавления временных характеристик
+    logger.info('Добавление временных характеристик')
+    
+    # Преобразуем текущее время в datetime
+    current_time = pd.to_datetime(current_time)
+    
+    # Добавляем временные характеристики
+    df['hour'] = pd.to_datetime(current_time).hour
+    df['weekday'] = pd.to_datetime(current_time).day_of_week # 0 - понедельник, 6 - воскресенье
+    
+    # Определяем время суток
+    df['time_of_day'] = pd.cut(df['hour'],
+                               bins=[0, 6, 12, 18, 24],
+                               labels=['ночь', 'утро', 'день', 'вечер'],
+                               right=False)
+    
+    # Определяем тип дня
+    df['day_of_week'] = pd.cut(df['weekday'],
+                               bins=[-1, 4, 6],
+                               labels=['будний', 'выходной'])
+    return df.drop(['hour', 'weekday'], axis=1)
+
+def get_recommended_feed(user_id: int, current_time: datetime, limit: int):
+    # Функция для получения списка рекоммендованных постов
+    # Получаем характеристики пользователя
+    user_features = extract_user_features(user_id)
+    
+    # Получаем DataFrame с постами
+    posts = df_post
+    
+    # Добавляем временные характеристики к DataFrame постов
+    posts_with_time_features = add_time_features(posts, current_time)
+    
+    # Объединяем характеристики пользователя с постами
+    user_posts_features = user_features.append(posts_with_time_features, ignore_index=True)
 
     # Закрепление порядка колонок
     user_posts_features = user_posts_features[['post_id', 'time_of_day', 'day_of_week', 'topic',
