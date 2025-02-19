@@ -1,4 +1,4 @@
-ffrom fastapi import FastAPI
+from fastapi import FastAPI
 import pandas as pd
 from sqlalchemy import create_engine
 import os
