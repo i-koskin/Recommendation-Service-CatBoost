@@ -85,7 +85,7 @@ post_table = load_post_text()
 liked_posts = load_liked_posts()
 
 def get_recommended_feed(id: int, time: datetime, limit: int):
-    # Функция для получения рекомендованного фида для пользователя по его ID
+    # Функция для получения списка рекомендованных постов для пользователя по его ID
     # Получение фич пользователя по его ID
     user_features = df_user.loc[df_user['user_id'] == id]
     user_features = user_features.drop(['user_id'], axis=1)
@@ -120,16 +120,16 @@ def get_recommended_feed(id: int, time: datetime, limit: int):
                                                'pca_1', 'pca_2', 'gender', 'city', 'exp_group',
                                                'os', 'source', 'age_group']]
 
-    # Формировка вероятности лайкнуть пост для всех постов
+    # Формируем вероятности лайкнуть пост для всех постов
     predicts = model.predict_proba(user_posts_features)[:, 1]
     user_posts_features['predicts'] = predicts
 
-    # Удаление постов, лайкнутых пользователем
+    # Удаляем посты, лайкнутые пользователем
     like_posts = liked_posts
     like_posts = list(like_posts[like_posts['user_id'] == id]['post_id'])
     filtered_ = user_posts_features[~user_posts_features.post_id.isin(like_posts)]
 
-    # Формирование списка постов для рекомендаций
+    # Формируем список рекомендованных постов
     recommended_posts = filtered_.sort_values('predicts')[-limit:].post_id
 
     return [
