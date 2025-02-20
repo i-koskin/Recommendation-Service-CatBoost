@@ -57,7 +57,7 @@ def get_model_path(model_name: str) -> str:
     else:  # Если код выполняется не в LMS
         model_paths = {
             'control': '/Users/user/Downloads/HW_/catboost_model_W2V',  # локальный путь к контрольной модели
-            'test': '/Users/user/Downloads/HW_/mcatboost_model_PCA'  # локальный путь к тестовой модели
+            'test': '/Users/user/Downloads/HW_/catboost_model_PCA'  # локальный путь к тестовой модели
         }
 
     if model_name not in model_paths:
