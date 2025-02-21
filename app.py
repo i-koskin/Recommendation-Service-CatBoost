@@ -119,103 +119,92 @@ def get_exp_group(user_id: int) -> str:
     return "control" if user_hash % 100 < CONTROL_PERCENT * 100 else "test"
 
 # Функции для рекомендаций, привязанные к моделям
-def recommend_with_control_model(id: int, time: datetime, limit: int, exp_group: str) -> List[PostGet]:
+def recommend_with_control_model(id: int, limit: int = 10, exp_group: str) -> List[PostGet]:
     # Функция для получения рекомендаций с использованием контрольной модели
-    return get_recommended_feed(model_control, id, time, limit, exp_group)
+    return get_recommended_feed(model_control, id, limit, exp_group)
 
-def recommend_with_test_model(id: int, time: datetime, limit: int, exp_group: str) -> List[PostGet]:
+def recommend_with_test_model(id: int, limit: int = 10, exp_group: str) -> List[PostGet]:
     # Функция для получения рекомендаций с использованием тестовой модели
-    return get_recommended_feed(model_test, id, time, limit, exp_group)
+    return get_recommended_feed(model_test, id, limit, exp_group)
 
-def extract_user_features(user_id: int) -> pd.Series:
-    # Функция для получения характеристик пользователя
-    logger.info(f'Извлечение характеристик для user_id: {user_id}')
-    user_features = df_user.loc[df_user['user_id'] == user_id]
-    if user_features.empty:
-        raise ValueError(f'Пользователь с ID {user_id} не найден.')
-    return user_features.drop(['user_id'], axis=1).iloc[0]
-
-def add_time_features(df: pd.DataFrame, current_time: datetime) -> pd.DataFrame:
-    # Функция для добавления временных характеристик
-    logger.info('Добавление временных характеристик')
-    
-    # Преобразуем текущее время в datetime
-    current_time = pd.to_datetime(current_time)
-    
-    # Добавляем временные характеристики
-    df['hour'] = pd.to_datetime(current_time).hour
-    df['weekday'] = pd.to_datetime(current_time).day_of_week # 0 - понедельник, 6 - воскресенье
-    
-    # Определяем время суток
-    df['time_of_day'] = pd.cut(df['hour'],
-                               bins=[0, 6, 12, 18, 24],
-                               labels=['ночь', 'утро', 'день', 'вечер'],
-                               right=False)
-    
-    # Определяем тип дня
-    df['day_of_week'] = pd.cut(df['weekday'],
-                               bins=[-1, 4, 6],
-                               labels=['будний', 'выходной'])
-    return df.drop(['hour', 'weekday'], axis=1)
-
-def get_recommended_feed(model, user_id: int, current_time: datetime, limit: int, exp_group: str):
+def get_recommended_feed(model, id: int, limit: int = 10, exp_group: str):
     # Функция для получения списка рекоммендованных постов
-    # Получаем характеристики пользователя
-    user_features = extract_user_features(user_id)
+    # Получение фич пользователя по его ID
+    logger.info(f'user_id: {id}')
+    logger.info('reading user features')
+    user_features = df_user.loc[df_user['user_id'] == id]
+    user_features = user_features.drop(['user_id'], axis=1)
+
+    # Загрузка фич по постам
+    logger.info('reading posts features')
+    if exp_group == 'control':
+        posts_features = df_post_control.copy()
+    elif exp_group == 'test':
+        posts_features = df_post_test.copy()
+    else:
+        raise ValueError('Unknown group')
     
-    # Получаем DataFrame с постами (df_post_control или df_post_test)
-    posts = df_post_control if user_is_in_control_group(user_id) else df_post_test
     
-    # Добавляем временные характеристики к DataFrame постов
-    posts_with_time_features = add_time_features(posts, current_time)
+    # Объединение фич
+    logger.info('zipping features')
+    add_user_features = dict(zip(user_features.columns, user_features.values[0]))
+    logger.info('assigning features')
+    user_posts_features = posts_features.assign(**add_user_features)
+    user_posts_features = user_posts_features.reset_index(drop=True)
     
-    # Объединяем характеристики пользователя с постами
-    user_posts_features = user_features.append(posts_with_time_features, ignore_index=True)
-    
+    # Добавление фич о текущей дате рекомендаций
+    logger.info('add time info')
+    time = datetime.now()
+    time = time.strftime("%Y-%m-%dT%H:%M:%S")
+    user_posts_features['hour'] = pd.to_datetime(time).hour
+    user_posts_features['weekday'] = pd.to_datetime(time).day_of_week
+    user_posts_features['time_of_day'] = pd.cut(
+        user_posts_features['hour'],
+        bins=[0, 6, 12, 18, 24],
+        labels=['night', 'morning', 'afternoon', 'evening'],
+        right=False
+        )
+    user_posts_features['day_of_week'] = pd.cut(
+        user_posts_features['weekday'],
+        bins=[-1, 4, 6],
+        labels=['weekday', 'weekend']
+        )
+
+    user_posts_features = user_posts_features.drop(['hour', 'weekday'], axis=1)
+
     # Закрепление порядка колонок
     if exp_group == 'control':
         user_posts_features = user_posts_features[['post_id', 'time_of_day', 'day_of_week', 'topic',
                                                'pca_1', 'pca_2', 'gender', 'city','exp_group',
                                                'os', 'source', 'age_group']]
     elif exp_group == 'test':
-        user_posts_features = user_posts_features[['post_id', 'time_of_day', 'day_of_week', 'topic', 'vector_0',
-                                                   'vector_1', 'vector_2', 'vector_3', 'vector_4', 'vector_5',
-                                                   'vector_6', 'vector_7', 'vector_8', 'vector_9', 'vector_10',
-                                                   'vector_11', 'vector_12', 'vector_13', 'vector_14', 'vector_15',
-                                                   'vector_16', 'vector_17', 'vector_18', 'vector_19', 'vector_20',
-                                                   'vector_21', 'vector_22', 'vector_23', 'vector_24', 'vector_25',
-                                                   'vector_26', 'vector_27', 'vector_28', 'vector_29', 'vector_30',
-                                                   'vector_31', 'vector_32', 'vector_33', 'vector_34', 'vector_35',
-                                                   'vector_36', 'vector_37', 'vector_38', 'vector_39', 'vector_40',
-                                                   'vector_41', 'vector_42', 'vector_43', 'vector_44', 'vector_45',
-                                                   'vector_46', 'vector_47', 'vector_48', 'vector_49', 'vector_50',
-                                                   'vector_51', 'vector_52', 'vector_53', 'vector_54', 'vector_55',
-                                                   'vector_56', 'vector_57', 'vector_58', 'vector_59', 'vector_60',
-                                                   'vector_61', 'vector_62', 'vector_63', 'vector_64', 'vector_65',
-                                                   'vector_66', 'vector_67', 'vector_68', 'vector_69', 'vector_70',
-                                                   'vector_71', 'vector_72', 'vector_73', 'vector_74', 'vector_75',
-                                                   'vector_76', 'vector_77', 'vector_78', 'vector_79', 'vector_80',
-                                                   'vector_81', 'vector_82', 'vector_83', 'vector_84', 'vector_85',
-                                                   'vector_86', 'vector_87', 'vector_88', 'vector_89', 'vector_90',
-                                                   'vector_91', 'vector_92', 'vector_93', 'vector_94', 'vector_95',
-                                                   'vector_96', 'vector_97', 'vector_98', 'vector_99',
-                                                   'gender', 'city', 'exp_group', 'os', 'source', 'age_group']]
+        user_posts_features = user_posts_features[['post_id', 'time_of_day', 'day_of_week', 'topic', 'vector_0', 'vector_1', 'vector_2', 'vector_3', 'vector_4', 'vector_5',
+                                                   'vector_6', 'vector_7', 'vector_8', 'vector_9', 'vector_10', 'vector_11', 'vector_12', 'vector_13', 'vector_14', 'vector_15',
+                                                   'vector_16', 'vector_17', 'vector_18', 'vector_19', 'vector_20', 'vector_21', 'vector_22', 'vector_23', 'vector_24', 'vector_25',
+                                                   'vector_26', 'vector_27', 'vector_28', 'vector_29', 'vector_30', 'vector_31', 'vector_32', 'vector_33', 'vector_34', 'vector_35',
+                                                   'vector_36', 'vector_37', 'vector_38', 'vector_39', 'vector_40', 'vector_41', 'vector_42', 'vector_43', 'vector_44', 'vector_45',
+                                                   'vector_46', 'vector_47', 'vector_48', 'vector_49', 'vector_50', 'vector_51', 'vector_52', 'vector_53', 'vector_54', 'vector_55',
+                                                   'vector_56', 'vector_57', 'vector_58', 'vector_59', 'vector_60', 'vector_61', 'vector_62', 'vector_63', 'vector_64', 'vector_65',
+                                                   'vector_66', 'vector_67', 'vector_68', 'vector_69', 'vector_70', 'vector_71', 'vector_72', 'vector_73', 'vector_74', 'vector_75',
+                                                   'vector_76', 'vector_77', 'vector_78', 'vector_79', 'vector_80', 'vector_81', 'vector_82', 'vector_83', 'vector_84', 'vector_85',
+                                                   'vector_86', 'vector_87', 'vector_88', 'vector_89', 'vector_90', 'vector_91', 'vector_92', 'vector_93', 'vector_94', 'vector_95',
+                                                   'vector_96', 'vector_97', 'vector_98', 'vector_99', 'gender', 'city', 'exp_group', 'os', 'source', 'age_group']]
     else:
         raise ValueError('Unknown group')
     
 
-    # Формируем вероятности лайкнуть пост для всех постов
+    # Формировка вероятности лайкнуть пост для всех постов
     logger.info('predicting')
     predicts = model.predict_proba(user_posts_features)[:, 1]
     user_posts_features['predicts'] = predicts
 
-    # Удаляем посты, лайкнутые пользователем
+    # Удаление постов, лайкнутых пользователем
     logger.info('deleting liked posts')
     like_posts = liked_posts
     like_posts = list(like_posts[like_posts['user_id'] == id])
     filtered_ = user_posts_features[~user_posts_features.post_id.isin(like_posts)]
 
-    # Формируем список рекомендованных постов
+    # Формирование списка постов для рекомендий
     recommended_posts = filtered_.sort_values('predicts')[-limit:].post_id
 
     return [
@@ -226,15 +215,15 @@ def get_recommended_feed(model, user_id: int, current_time: datetime, limit: int
         }) for i in recommended_posts
     ]
 
-# Эндпоинт для получения списка рекомендованных постов
+
 @app.get('/post/recommendations/', response_model=Response)
-def recommended_posts(id: int, time: datetime, limit: int=10) -> Response:
+def recommended_posts(id: int, limit: int=10) -> Response:
     exp_group = get_exp_group(id)  # Определяем группу пользователя
 
     if exp_group == 'control':
-        recommendations = recommend_with_control_model(id, time, limit, exp_group)
+        recommendations = recommend_with_control_model(id, limit, exp_group)
     elif exp_group == 'test':
-        recommendations = recommend_with_test_model(id, time, limit, exp_group)
+        recommendations = recommend_with_test_model(id, limit, exp_group)
     else:
         raise ValueError('Unknown group')
 
@@ -243,4 +232,9 @@ def recommended_posts(id: int, time: datetime, limit: int=10) -> Response:
         recommendations = []
 
     # Возвращаем объект Response с информацией о группе и рекомендациями
-    return Response(exp_group=exp_group, recommendations=recommendations)  
+    return Response(exp_group=exp_group, recommendations=recommendations)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000) 
