@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 import pandas as pd
 from sqlalchemy import create_engine
-import os
 from catboost import CatBoostClassifier
 from typing import List
 from datetime import datetime
@@ -42,7 +41,7 @@ class PostGet(BaseModel):
     topic: str
 
     class Config:
-        orm_mode = True # Включаем режим ORM для поддержки работы с SQLAlchemy
+        from_attributes = True # Включаем режим ORM для поддержки работы с SQLAlchemy
 
 # Модель для ответа с рекомендациями
 class Response(BaseModel):
@@ -52,8 +51,8 @@ class Response(BaseModel):
 # Функция для получения пути к модели в зависимости от окружения
 def get_model_path(model_name: str) -> str:
     model_paths = {
-        'control': './catboost_model_W2V',  # локальный путь к контрольной модели
-        'test': './catboost_model_PCA'  # локальный путь к тестовой модели
+        'control': './catboost_model_PCA',  # локальный путь к контрольной модели
+        'test': './catboost_model_W2V'  # локальный путь к тестовой модели
     }
 
     if model_name not in model_paths:
@@ -119,15 +118,15 @@ def get_exp_group(user_id: int) -> str:
     return "control" if user_hash % 100 < CONTROL_PERCENT * 100 else "test"
 
 # Функции для рекомендаций, привязанные к моделям
-def recommend_with_control_model(id: int, limit: int = 10, exp_group: str) -> List[PostGet]:
+def recommend_with_control_model(id: int, exp_group: str, limit: int) -> List[PostGet]:
     # Функция для получения рекомендаций с использованием контрольной модели
-    return get_recommended_feed(model_control, id, limit, exp_group)
+    return get_recommended_feed(model_control, id, exp_group, limit)
 
-def recommend_with_test_model(id: int, limit: int = 10, exp_group: str) -> List[PostGet]:
+def recommend_with_test_model(id: int, exp_group: str, limit: int) -> List[PostGet]:
     # Функция для получения рекомендаций с использованием тестовой модели
-    return get_recommended_feed(model_test, id, limit, exp_group)
+    return get_recommended_feed(model_test, id, exp_group, limit)
 
-def get_recommended_feed(model, id: int, limit: int = 10, exp_group: str):
+def get_recommended_feed(model, id: int, exp_group: str, limit: int = 10):
     # Функция для получения списка рекоммендованных постов
     # Получение фич пользователя по его ID
     logger.info(f'user_id: {id}')
@@ -221,9 +220,9 @@ def recommended_posts(id: int, limit: int=10) -> Response:
     exp_group = get_exp_group(id)  # Определяем группу пользователя
 
     if exp_group == 'control':
-        recommendations = recommend_with_control_model(id, limit, exp_group)
+        recommendations = recommend_with_control_model(id, exp_group, limit)
     elif exp_group == 'test':
-        recommendations = recommend_with_test_model(id, limit, exp_group)
+        recommendations = recommend_with_test_model(id, exp_group, limit)
     else:
         raise ValueError('Unknown group')
 
