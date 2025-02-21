@@ -7,6 +7,11 @@ from typing import List
 from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy.orm import sessionmaker
+import logging
+
+# Настройка логгера
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Создаем экземпляр FastAPI
 app = FastAPI()
@@ -32,16 +37,13 @@ class PostGet(BaseModel):
     topic: str
 
 def get_model_path(path: str) -> str:
-    # Функция для получения пути к модели в зависимости от окружения
-    if os.environ.get("IS_LMS") == "1":  # Проверяем, выполняется ли код в LMS или локально
-        MODEL_PATH = '/workdir/user_input/model'
-    else:
-        MODEL_PATH = path
+    # Функция для получения пути к модели
+    MODEL_PATH = path
     return MODEL_PATH
 
 def load_models():
     # Функция для загрузки модели CatBoost
-    model_path = get_model_path("/Users/user/Downloads/HW_/catboost_model_PCA")
+    model_path = get_model_path("./catboost_model_PCA")
     loaded_model = CatBoostClassifier()
     loaded_model.load_model(model_path)
     return loaded_model
