@@ -9,7 +9,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import sessionmaker
 import hashlib
 import logging
-from loguru import logger
+
+# Настройка логгера
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Создаем экземпляр FastAPI
 app = FastAPI()
@@ -46,19 +49,12 @@ class Response(BaseModel):
     exp_group: str
     recommendations: List[PostGet]
 
-
 # Функция для получения пути к модели в зависимости от окружения
 def get_model_path(model_name: str) -> str:
-    if os.environ.get("IS_LMS") == "1":  # проверяем где выполняется код в лмс, или локально. Немного магии
-        model_paths = {
-            'control': '/workdir/user_input/catboost_model_W2V',  # путь к контрольной модели
-            'test': '/workdir/user_input/catboost_model_PCA'  # путь к тестовой модели
-        }
-    else:  # Если код выполняется не в LMS
-        model_paths = {
-            'control': '/Users/user/Downloads/HW_/catboost_model_W2V',  # локальный путь к контрольной модели
-            'test': '/Users/user/Downloads/HW_/catboost_model_PCA'  # локальный путь к тестовой модели
-        }
+    model_paths = {
+        'control': './catboost_model_W2V',  # локальный путь к контрольной модели
+        'test': './catboost_model_PCA'  # локальный путь к тестовой модели
+    }
 
     if model_name not in model_paths:
         raise ValueError(f"Unknown model: {model_name}")
