@@ -10,6 +10,15 @@
 
 ---
 
+## 🛠 Инструменты
+
+- [FastAPI](https://fastapi.tiangolo.com/) — backend-фреймворк
+- [CatBoost](https://catboost.ai/) — модель машинного обучения
+- [Postman](https://www.postman.com/) — инструмент для тестирования API
+- [Uvicorn](https://www.uvicorn.org/) — сервер ASGI для запуска FastAPI
+
+---
+
 ## 🚀 Быстрый старт
 
 ### 1. Клонирование репозитория
@@ -23,7 +32,7 @@ cd Recommendation-Service-CatBoost
 
 ### 2. Загрузка предобученных моделей
 
-Скачайте следующие модели и поместите их в корень проекта:
+Скачайте следующие модели и поместите их в корневую папку проекта ( ./Recommendation-Service-CatBoost):
 
 - [catboost_model_PCA](https://drive.google.com/file/d/1gksqZ9tETozRNqnV_uvKhXqSciJAXwU7/view?usp=sharing)
 - [catboost_model_W2V](https://drive.google.com/file/d/1ldkckMPxD7WVJjloa97nRhXmHU8u9L_f/view?usp=sharing)
@@ -118,14 +127,5 @@ http://localhost:8000/post/recommendations?id=200&limit=5
 ]
 }
 ```
-
----
-
-## 🛠 Инструменты
-
-- [FastAPI](https://fastapi.tiangolo.com/) — backend-фреймворк
-- [CatBoost](https://catboost.ai/) — модель машинного обучения
-- [Postman](https://www.postman.com/) — инструмент для тестирования API
-- [Uvicorn](https://www.uvicorn.org/) — сервер ASGI для запуска FastAPI
 
 ---
