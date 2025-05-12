@@ -26,7 +26,7 @@
 Скачайте репозиторий в локальную директорию:
 
 ```bash
-git clone https://github.com/i-koskin/Recommendation-Service-CatBoost
+git clone https://github.com/i-koskin/Recommendation-Service-CatBoost.git
 cd Recommendation-Service-CatBoost
 ```
 
