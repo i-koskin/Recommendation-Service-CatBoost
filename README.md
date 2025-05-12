@@ -96,7 +96,7 @@ http://localhost:8000/post/recommendations?id=200&limit=5
   ...
 ]
 ```
-<img src="./docs/Postman_catboost_model_PCA.JPG" width="410"> <img src="./docs/Postman_catboost_model_W2V.JPG" width="410">
+<img src="./docs/Postman_catboost_model_PCA.JPG" width="500"> <img src="./docs/Postman_catboost_model_W2V.JPG" width="500">
 
 Если используется файл `app.py` (экспериментальная версия), в ответ также включается поле `exp_group`, указывающее на принадлежность пользователя к группе A/B теста:
 
@@ -127,5 +127,6 @@ http://localhost:8000/post/recommendations?id=200&limit=5
 ]
 }
 ```
-<img src="./docs/Postman_catboost_model_app_test.JPG" width="410"> <img src="./docs/Postman_catboost_model_app_control.JPG" width="410">
+<img src="./docs/Postman_catboost_model_app_test.JPG" width="500"> <img src="./docs/Postman_catboost_model_app_control.JPG" width="500">
+
 ---
