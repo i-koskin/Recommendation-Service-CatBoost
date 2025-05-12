@@ -30,7 +30,7 @@ cd Recommendation-Service-CatBoost
 
 ### 3. Установка зависимостей
 
-Установите необходимый сервер для запуска API:
+Установите сервер для запуска API:
 
 ```bash
 pip install uvicorn
