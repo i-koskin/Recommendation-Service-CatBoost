@@ -86,10 +86,10 @@ http://localhost:8000/post/recommendations?id=200&limit=5
 
 #### Примеры ответов:
 
-<img src="./docs/Postman_catboost_model_PCA.JPG" width="450"> <img src="./docs/Postman_catboost_model_W2V.JPG" width="450">
+<img src="./docs/Postman_catboost_model_PCA.JPG" width="420"> <img src="./docs/Postman_catboost_model_W2V.JPG" width="420">
 
 Если используется файл `app.py`, в ответ также включается поле `exp_group`, указывающее на принадлежность пользователя к группе A/B теста:
 
-<img src="./docs/Postman_catboost_model_app_test.JPG" width="450"> <img src="./docs/Postman_catboost_model_app_control.JPG" width="450">
+<img src="./docs/Postman_catboost_model_app_test.JPG" width="420"> <img src="./docs/Postman_catboost_model_app_control.JPG" width="420">
 
 ---
