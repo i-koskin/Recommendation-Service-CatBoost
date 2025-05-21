@@ -156,7 +156,7 @@ def get_recommended_feed(id: int, limit: int = 10):
     ]
 
 # Эндпоинт для получения рекомендованных постов
-@app.get('/post/recommendations/', response_model=List[PostGet])
+@app.get('/post/recommendations', response_model=List[PostGet])
 def recommended_posts(id: int, limit: int = 10) -> List[PostGet]:
     return get_recommended_feed(id, limit)
 
