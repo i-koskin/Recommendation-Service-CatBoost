@@ -192,7 +192,7 @@ def get_recommended_feed(model, id: int, exp_group: str, limit: int = 10):
         raise ValueError('Unknown group')
     
 
-    # Формировка вероятности лайкнуть пост для всех постов
+    # Формируем вероятности лайкнуть пост для всех постов
     logger.info('predicting')
     predicts = model.predict_proba(user_posts_features)[:, 1]
     user_posts_features['predicts'] = predicts
