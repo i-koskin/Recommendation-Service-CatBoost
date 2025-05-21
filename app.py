@@ -215,7 +215,7 @@ def get_recommended_feed(model, id: int, exp_group: str, limit: int = 10):
     ]
 
 
-@app.get('/post/recommendations/', response_model=Response)
+@app.get('/post/recommendations', response_model=Response)
 def recommended_posts(id: int, limit: int=10) -> Response:
     exp_group = get_exp_group(id)  # Определяем группу пользователя
 
