@@ -127,7 +127,7 @@ def get_recommended_feed(id: int, time: datetime, limit: int = 10):
                                                'pca_1', 'pca_2', 'gender', 'city','exp_group',
                                                'os', 'source', 'age_group']]
 
-    # Формировка вероятности лайкнуть пост для всех постов
+    # Формируем вероятности лайкнуть пост для всех постов
     predicts = model.predict_proba(user_posts_features)[:, 1]
     user_posts_features['predicts'] = predicts
 
