@@ -136,15 +136,16 @@ def get_recommended_feed(id: int, time: datetime, limit: int = 10):
     like_posts = list(like_posts[like_posts['user_id'] == id])
     filtered_ = user_posts_features[~user_posts_features.post_id.isin(like_posts)]
 
-    # Формирование списка постов для рекомендий
-    recommended_posts = filtered_.sort_values('predicts')[-limit:].post_id
+    # Формирование списка рекомендованных постов
+    top_post_ids = filtered_.nlargest(limit, 'predicts')['post_id'].to_list()
+    post_lookup = post_table.set_index('post_id').loc[top_post_ids]
 
     return [
-        PostGet(**{
-            'id': i,
-            'text': post_table[post_table['post_id'] == i].text.values[0],
-            'topic': post_table[post_table['post_id'] == i].topic.values[0]
-        }) for i in recommended_posts
+        PostGet(
+            id=i,
+            text=post_lookup.loc[i]['text'],
+            topic=post_lookup.loc[i]['topic']
+        ) for i in top_post_ids
     ]
 
 # Эндпоинт для получения рекомендованных постов
